@@ -1,0 +1,33 @@
+{
+  "name": "collabry-server",
+  "version": "1.0.0",
+  "description": "Collabry backend API server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch-path=config --watch-path=database --watch-path=middleware --watch-path=routes --watch-path=sockets --watch-path=utils --watch-path=server.js server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "google-auth-library": "^11.1.0",
+    "googleapis": "^185.0.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.4.0",
+    "mysql2": "^3.14.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^7.0.5",
+    "socket.io": "^4.8.3",
+    "uuid": "^11.1.0",
+    "zod": "^3.25.67"
+  }
+}

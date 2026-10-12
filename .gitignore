@@ -1,0 +1,64 @@
+# =======================================================
+# Collabry Root .gitignore
+# =======================================================
+
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Production Build Outputs
+dist/
+dist-ssr/
+client/dist/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+client/.env
+client/.env.local
+server/.env
+server/.env.local
+
+# Project Documentation & Internal System Notes
+Collabry_Project_Documentation_v1.1.docx
+*.docx
+*.doc
+extracted_doc.txt
+
+# Uploads & Media Files (keep directory, ignore uploaded contents)
+server/uploads/*
+!server/uploads/.gitkeep
+server/uploads/avatars/*
+!server/uploads/avatars/.gitkeep
+server/uploads/banners/*
+!server/uploads/banners/.gitkeep
+server/uploads/posts/*
+!server/uploads/posts/.gitkeep
+server/uploads/projects/*
+!server/uploads/projects/.gitkeep
+
+# Logs & Debugging
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor & IDE Configs
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+Desktop.ini

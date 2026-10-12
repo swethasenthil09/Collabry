@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: collabry-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: collabry
+      MYSQL_USER: collabry_user
+      MYSQL_PASSWORD: collabry_password
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./server/database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-prootpassword']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: collabry-backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '5000:5000'
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DB_HOST: db
+      DB_USER: collabry_user
+      DB_PASSWORD: collabry_password
+      DB_NAME: collabry
+      DB_PORT: 3306
+      CLIENT_URL: http://localhost:3000
+      JWT_SECRET: super_jwt_secret_collabry_production_key_123456
+      JWT_REFRESH_SECRET: super_refresh_secret_collabry_production_key_987654
+    volumes:
+      - uploads_data:/app/uploads
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: collabry-frontend
+    restart: always
+    depends_on:
+      - server
+    ports:
+      - '3000:80'
+
+volumes:
+  mysql_data:
+  uploads_data:
