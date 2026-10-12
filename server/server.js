@@ -95,7 +95,13 @@ app.use('/api/v1/search', searchRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
-// Health check
+// Health check & Root endpoint for cloud health checks
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', service: 'collabry-server', time: new Date().toISOString() });
+});
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
@@ -110,7 +116,7 @@ app.use((err, req, res, next) => {
 initializeSocket(io);
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Collabry server running on port ${PORT}`);
 });
 
