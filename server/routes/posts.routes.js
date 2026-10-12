@@ -102,6 +102,7 @@ router.get('/', optionalAuth, async (req, res) => {
 
     const [posts] = await pool.query(
       `SELECT p.*, 
+        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id AND c.deleted_at IS NULL) as live_comment_count,
         u.alias as author_alias, u.username as author_username, u.name as author_name, u.avatar_url as author_avatar,
         c.name as community_name, c.slug as community_slug,
         p_proj.name as project_name, p_proj.visibility as project_visibility
@@ -150,7 +151,7 @@ router.get('/', optionalAuth, async (req, res) => {
       upvotes: p.upvotes,
       downvotes: p.downvotes,
       score: p.upvotes - p.downvotes,
-      comment_count: p.comment_count,
+      comment_count: parseInt(p.live_comment_count != null ? p.live_comment_count : p.comment_count) || 0,
       created_at: p.created_at,
       community: p.community_id ? { id: p.community_id, name: p.community_name, slug: p.community_slug } : null,
       project: p.project_id ? { id: p.project_id, name: p.project_name, visibility: p.project_visibility } : null,
@@ -171,6 +172,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const [posts] = await pool.query(
       `SELECT p.*, 
+        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id AND c.deleted_at IS NULL) as live_comment_count,
         u.alias as author_alias, u.username as author_username, u.name as author_name, u.avatar_url as author_avatar,
         c.name as community_name, c.slug as community_slug,
         p_proj.name as project_name, p_proj.visibility as project_visibility
@@ -283,7 +285,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
       upvotes: p.upvotes,
       downvotes: p.downvotes,
       score: p.upvotes - p.downvotes,
-      comment_count: p.comment_count,
+      comment_count: serializedComments ? serializedComments.length : (parseInt(p.live_comment_count != null ? p.live_comment_count : p.comment_count) || 0),
       created_at: p.created_at,
       community: p.community_id ? { id: p.community_id, name: p.community_name, slug: p.community_slug } : null,
       project: p.project_id ? { id: p.project_id, name: p.project_name, visibility: p.project_visibility } : null,

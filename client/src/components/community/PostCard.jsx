@@ -265,7 +265,7 @@ export default function PostCard({ post, onVote, onPostUpdated }) {
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
-              <span>{post.comment_count || 0} Comments</span>
+              <span>{post.comment_count === 1 ? '1 Comment' : `${post.comment_count || 0} Comments`}</span>
             </div>
 
             {post.post_type === 'collaboration_request' && post.collab_status === 'open' && (
