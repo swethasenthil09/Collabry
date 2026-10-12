@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import CollabryLogo from '../components/common/CollabryLogo';
 import GoogleAuthButton from '../components/common/GoogleAuthButton';
-import HumanVerificationModal from '../components/common/HumanVerificationModal';
 
 export default function Register() {
   const { register } = useAuth();
@@ -11,11 +10,10 @@ export default function Register() {
   const [form, setForm] = useState({ username: '', email: '', password: '', name: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showCaptcha, setShowCaptcha] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -28,16 +26,9 @@ export default function Register() {
       return;
     }
 
-    // Trigger interactive human verification challenge
-    setShowCaptcha(true);
-  };
-
-  const handleVerificationSuccess = async () => {
-    setShowCaptcha(false);
     setLoading(true);
-    setError('');
     try {
-      await register({ ...form, captcha_verified: true });
+      await register(form);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Registration failed. Please try again.');
@@ -128,26 +119,16 @@ export default function Register() {
           <button
             type="submit"
             className="btn btn-primary"
-            style={{ width: '100%', marginTop: 8, padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            style={{ width: '100%', marginTop: 8, padding: '12px' }}
             disabled={loading}
           >
-            <span>{loading ? 'Verifying & Creating Account...' : 'Verify & Create Account'}</span>
-            <span style={{ fontSize: 16 }}>🧩</span>
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 
         <div className="switch-link">
           Already have an account? <Link to="/login">Log In</Link>
         </div>
-
-        {/* Gamified Human Verification Puzzle Challenge */}
-        <HumanVerificationModal
-          isOpen={showCaptcha}
-          onClose={() => setShowCaptcha(false)}
-          onSuccess={handleVerificationSuccess}
-          title="Prove You Are Human"
-          subtitle="Slide the piece or spot the difference to verify"
-        />
       </div>
     </div>
   );

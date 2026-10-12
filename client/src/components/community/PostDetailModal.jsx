@@ -641,7 +641,10 @@ export default function PostDetailModal({ postId, onClose, onPostUpdated }) {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        cursor: 'pointer',
                       }}
+                      onClick={() => window.open(resolveMediaUrl(post.media_url), '_blank')}
+                      title="Click to open full resolution image"
                     >
                       {post.media_type === 'video' || post.media_url.match(/\.(mp4|webm|mov|ogg)$/i) ? (
                         <video
@@ -649,12 +652,26 @@ export default function PostDetailModal({ postId, onClose, onPostUpdated }) {
                           controls
                           playsInline
                           style={{ width: '100%', maxHeight: 520, objectFit: 'contain' }}
+                          onClick={(e) => e.stopPropagation()}
                         />
                       ) : (
                         <img
                           src={resolveMediaUrl(post.media_url)}
                           alt={post.title}
                           style={{ width: '100%', maxHeight: 520, objectFit: 'contain' }}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.parentElement) {
+                              const fb = document.createElement('div');
+                              fb.style.padding = '30px';
+                              fb.style.textAlign = 'center';
+                              fb.style.color = 'var(--text-muted)';
+                              fb.style.fontSize = '13px';
+                              fb.innerHTML = '🖼️ <span>Image preview unavailable</span>';
+                              e.currentTarget.parentElement.appendChild(fb);
+                            }
+                          }}
                         />
                       )}
                     </div>

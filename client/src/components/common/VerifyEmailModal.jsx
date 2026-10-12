@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { IconCheck, IconX, IconMail } from './Icons';
-import HumanVerificationModal from './HumanVerificationModal';
 
 export default function VerifyEmailModal({ onClose, onVerified }) {
   const { user, setUser } = useAuth();
@@ -13,15 +12,13 @@ export default function VerifyEmailModal({ onClose, onVerified }) {
   const [resending, setResending] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [showCaptcha, setShowCaptcha] = useState(false);
 
-  const handleCaptchaSuccess = async () => {
-    setShowCaptcha(false);
+  const handleInstantVerify = async () => {
     setLoading(true);
     setMessage({ type: '', text: '' });
     try {
       const res = await api.post('/auth/verify-human');
-      setMessage({ type: 'success', text: res.data.message || 'Security puzzle solved! Account verified.' });
+      setMessage({ type: 'success', text: res.data.message || 'Account verified successfully!' });
       if (user) {
         const updated = { ...user, email_verified: true };
         setUser(updated);
@@ -200,10 +197,12 @@ export default function VerifyEmailModal({ onClose, onVerified }) {
           )}
 
         {/* Instant Puzzle Verification Button */}
+        {/* Instant 1-Click Verification Button */}
         <div style={{ marginBottom: 16 }}>
           <button
             type="button"
-            onClick={() => setShowCaptcha(true)}
+            onClick={handleInstantVerify}
+            disabled={loading}
             className="btn btn-primary"
             style={{
               width: '100%',
@@ -218,10 +217,11 @@ export default function VerifyEmailModal({ onClose, onVerified }) {
               justifyContent: 'center',
               gap: 8,
               boxShadow: '0 4px 12px rgba(88, 101, 242, 0.35)',
+              cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
-            <span style={{ fontSize: 16 }}>🧩</span>
-            <span>Solve Puzzle to Verify Instantly</span>
+            <span style={{ fontSize: 16 }}>⚡</span>
+            <span>{loading ? 'Activating...' : 'Instant 1-Click Account Activation'}</span>
           </button>
           <div style={{ display: 'flex', alignItems: 'center', margin: '14px 0', gap: 10 }}>
             <div style={{ flex: 1, height: '1px', background: 'var(--border-medium)' }} />
@@ -283,14 +283,6 @@ export default function VerifyEmailModal({ onClose, onVerified }) {
           </div>
         </div>
       </div>
-
-      <HumanVerificationModal
-        isOpen={showCaptcha}
-        onClose={() => setShowCaptcha(false)}
-        onSuccess={handleCaptchaSuccess}
-        title="Security Verification"
-        subtitle="Solve the puzzle to verify your account instantly"
-      />
     </div>,
     document.body
   );

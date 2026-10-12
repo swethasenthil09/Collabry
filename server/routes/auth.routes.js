@@ -52,20 +52,18 @@ router.post('/register', async (req, res) => {
 
       // If the account was never verified (e.g. previous abandoned signup or expired OTP),
       // allow completing registration with fresh credentials and a new verification code
-      const isHumanVerified = Boolean(req.body.captcha_verified);
       userId = existingUser[0].id;
       alias = existingUser[0].alias || generateAlias();
       const passwordHash = await bcrypt.hash(password, 12);
 
       await pool.query(
-        'UPDATE users SET username = ?, password_hash = ?, name = ?, alias = ?, email_verified = ?, updated_at = NOW() WHERE id = ?',
-        [trimmedUsername, passwordHash, name || '', alias, isHumanVerified ? 1 : 0, userId]
+        'UPDATE users SET username = ?, password_hash = ?, name = ?, alias = ?, email_verified = 1, updated_at = NOW() WHERE id = ?',
+        [trimmedUsername, passwordHash, name || '', alias, userId]
       );
 
       // Clean up previous stale OTPs
       await pool.query('DELETE FROM email_otps WHERE user_id = ?', [userId]);
     } else {
-      const isHumanVerified = Boolean(req.body.captcha_verified);
       // Generate unique alias
       alias = generateAlias();
       let [aliasCheck] = await pool.query('SELECT id FROM users WHERE alias = ?', [alias]);
@@ -77,8 +75,8 @@ router.post('/register', async (req, res) => {
       const passwordHash = await bcrypt.hash(password, 12);
 
       const [result] = await pool.query(
-        'INSERT INTO users (username, email, password_hash, name, alias, email_verified) VALUES (?, ?, ?, ?, ?, ?)',
-        [trimmedUsername, trimmedEmail, passwordHash, name || '', alias, isHumanVerified ? 1 : 0]
+        'INSERT INTO users (username, email, password_hash, name, alias, email_verified) VALUES (?, ?, ?, ?, ?, 1)',
+        [trimmedUsername, trimmedEmail, passwordHash, name || '', alias]
       );
       userId = result.insertId;
     }
@@ -102,27 +100,6 @@ router.post('/register', async (req, res) => {
       [userId, refreshHash, familyId, expiresAt]
     );
 
-    let emailSent = false;
-    let devOtp = undefined;
-
-    // If human captcha was NOT solved yet, generate backup OTP
-    if (!isHumanVerified) {
-      const otp = generateOTP();
-      const verifyToken = uuidv4();
-      const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
-      const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-      const verificationLink = `${clientUrl}/verify-email?token=${verifyToken}&email=${encodeURIComponent(trimmedEmail)}`;
-
-      await pool.query(
-        'INSERT INTO email_otps (user_id, email, otp_code, token, purpose, expires_at) VALUES (?, ?, ?, ?, "email_verification", ?)',
-        [userId, trimmedEmail, otp, verifyToken, otpExpires]
-      );
-      devOtp = otp;
-      sendVerificationOTP(trimmedEmail, name || trimmedUsername, otp, verificationLink)
-        .then(() => { emailSent = true; })
-        .catch(err => { console.error('Email send err:', err); });
-    }
-
     res.status(201).json({
       user: {
         id: userId,
@@ -132,16 +109,12 @@ router.post('/register', async (req, res) => {
         alias,
         avatar_url: null,
         bio: null,
-        email_verified: isHumanVerified,
+        email_verified: true,
         skills: [],
       },
       accessToken,
       refreshToken,
-      emailSent,
-      devOtp: isHumanVerified ? undefined : devOtp,
-      message: isHumanVerified
-        ? 'Account successfully created and verified! Welcome to Collabry.'
-        : 'Registration successful! Verification email sent.',
+      message: 'Account successfully created! Welcome to Collabry.',
     });
   } catch (err) {
     console.error('Register error:', err);

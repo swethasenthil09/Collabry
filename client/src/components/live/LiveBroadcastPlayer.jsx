@@ -361,16 +361,25 @@ export default function LiveBroadcastPlayer({ session, localStream, onClose, onE
     socket.on('live:stream_ended', handleStreamEnded);
     socket.on('live:signal', handleLiveSignal);
 
-    // If viewer, create offer to broadcaster
+    // If viewer, create offer to broadcaster with audio & video transceivers
     if (!isHost) {
       const viewerPc = new RTCPeerConnection({
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
       });
       peerConnectionsRef.current.set('host', viewerPc);
 
+      // Explicitly declare transceivers to receive host audio and video
+      try {
+        viewerPc.addTransceiver('audio', { direction: 'recvonly' });
+        viewerPc.addTransceiver('video', { direction: 'recvonly' });
+      } catch (e) {
+        console.warn('Transceiver setup error:', e);
+      }
+
       viewerPc.ontrack = (event) => {
-        if (videoRef.current) {
+        if (videoRef.current && event.streams && event.streams[0]) {
           videoRef.current.srcObject = event.streams[0];
+          videoRef.current.play().catch(e => console.warn('Broadcast media autoplay play error:', e));
         }
       };
 
@@ -383,7 +392,7 @@ export default function LiveBroadcastPlayer({ session, localStream, onClose, onE
         }
       };
 
-      viewerPc.createOffer().then((offer) => {
+      viewerPc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true }).then((offer) => {
         viewerPc.setLocalDescription(offer);
         socket.emit('live:signal', {
           sessionId: session.id,

@@ -80,14 +80,24 @@ app.use(corsMiddleware);
 const path = require('path');
 const fs = require('fs');
 
-// Ensure uploads directory exists
+// Ensure uploads directory & subdirectories exist
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
+const uploadSubdirs = ['posts', 'avatars', 'banners', 'projects', 'audio', 'files'];
+uploadSubdirs.forEach(sub => {
+  const subPath = path.join(uploadsDir, sub);
+  if (!fs.existsSync(subPath)) {
+    fs.mkdirSync(subPath, { recursive: true });
+  }
+});
+
 app.use('/uploads', (req, res, next) => {
   res.removeHeader('X-Frame-Options');
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
   next();
 }, express.static(uploadsDir));
 

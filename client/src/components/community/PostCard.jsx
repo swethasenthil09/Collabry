@@ -215,8 +215,13 @@ export default function PostCard({ post, onVote, onPostUpdated }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                cursor: 'pointer',
               }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDetail(true);
+              }}
+              title="Click to view post and comments"
             >
               {post.media_type === 'video' || post.media_url.match(/\.(mp4|webm|mov|ogg)$/i) ? (
                 <video
@@ -224,13 +229,27 @@ export default function PostCard({ post, onVote, onPostUpdated }) {
                   controls
                   playsInline
                   style={{ width: '100%', maxHeight: 420, objectFit: 'contain' }}
+                  onClick={(e) => e.stopPropagation()}
                 />
               ) : (
                 <img
                   src={resolveMediaUrl(post.media_url)}
                   alt={post.title}
-                  style={{ width: '100%', maxHeight: 420, objectFit: 'contain' }}
+                  style={{ width: '100%', maxHeight: 420, objectFit: 'contain', transition: 'transform 0.2s' }}
                   loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.style.display = 'none';
+                    if (e.currentTarget.parentElement) {
+                      const fb = document.createElement('div');
+                      fb.style.padding = '24px';
+                      fb.style.textAlign = 'center';
+                      fb.style.color = 'var(--text-muted)';
+                      fb.style.fontSize = '12px';
+                      fb.innerHTML = '🖼️ <span>Image preview</span>';
+                      e.currentTarget.parentElement.appendChild(fb);
+                    }
+                  }}
                 />
               )}
             </div>

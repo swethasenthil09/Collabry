@@ -27,17 +27,9 @@ Collabry_Project_Documentation_v1.1.docx
 *.doc
 extracted_doc.txt
 
-# Uploads & Media Files (keep directory, ignore uploaded contents)
-server/uploads/*
-!server/uploads/.gitkeep
-server/uploads/avatars/*
-!server/uploads/avatars/.gitkeep
-server/uploads/banners/*
-!server/uploads/banners/.gitkeep
-server/uploads/posts/*
-!server/uploads/posts/.gitkeep
-server/uploads/projects/*
-!server/uploads/projects/.gitkeep
+# Uploads & Media Files (Include uploaded assets so production deploy has existing media)
+# server/uploads/*
+
 
 # Logs & Debugging
 logs/

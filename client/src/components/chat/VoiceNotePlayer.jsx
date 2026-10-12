@@ -18,12 +18,24 @@ export default function VoiceNotePlayer({ mediaUrl, duration = 0, isSender = fal
   const fullAudioUrl = resolveMediaUrl(mediaUrl);
 
   useEffect(() => {
+    if (duration && !isNaN(duration) && isFinite(duration) && duration > 0) {
+      setTotalDuration(Math.round(duration));
+    }
+  }, [duration]);
+
+  useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    setIsPlaying(false);
+    setCurrentTime(0);
+    audio.load();
 
     const handleLoadedMetadata = () => {
       if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
         setTotalDuration(Math.round(audio.duration));
+      } else if (duration > 0) {
+        setTotalDuration(Math.round(duration));
       }
     };
 
@@ -45,7 +57,7 @@ export default function VoiceNotePlayer({ mediaUrl, duration = 0, isSender = fal
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, []);
+  }, [fullAudioUrl]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -107,7 +119,7 @@ export default function VoiceNotePlayer({ mediaUrl, duration = 0, isSender = fal
       maxWidth: 340,
       userSelect: 'none',
     }}>
-      <audio ref={audioRef} src={fullAudioUrl} preload="metadata" />
+      <audio ref={audioRef} src={fullAudioUrl} preload="auto" crossOrigin="anonymous" />
 
       {/* Play / Pause Circular Button */}
       <button
