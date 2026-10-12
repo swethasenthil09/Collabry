@@ -52,18 +52,20 @@ router.post('/register', async (req, res) => {
 
       // If the account was never verified (e.g. previous abandoned signup or expired OTP),
       // allow completing registration with fresh credentials and a new verification code
+      const isHumanVerified = Boolean(req.body.captcha_verified);
       userId = existingUser[0].id;
       alias = existingUser[0].alias || generateAlias();
       const passwordHash = await bcrypt.hash(password, 12);
 
       await pool.query(
-        'UPDATE users SET username = ?, password_hash = ?, name = ?, alias = ?, updated_at = NOW() WHERE id = ?',
-        [trimmedUsername, passwordHash, name || '', alias, userId]
+        'UPDATE users SET username = ?, password_hash = ?, name = ?, alias = ?, email_verified = ?, updated_at = NOW() WHERE id = ?',
+        [trimmedUsername, passwordHash, name || '', alias, isHumanVerified ? 1 : 0, userId]
       );
 
       // Clean up previous stale OTPs
       await pool.query('DELETE FROM email_otps WHERE user_id = ?', [userId]);
     } else {
+      const isHumanVerified = Boolean(req.body.captcha_verified);
       // Generate unique alias
       alias = generateAlias();
       let [aliasCheck] = await pool.query('SELECT id FROM users WHERE alias = ?', [alias]);
@@ -75,15 +77,17 @@ router.post('/register', async (req, res) => {
       const passwordHash = await bcrypt.hash(password, 12);
 
       const [result] = await pool.query(
-        'INSERT INTO users (username, email, password_hash, name, alias, email_verified) VALUES (?, ?, ?, ?, ?, 0)',
-        [trimmedUsername, trimmedEmail, passwordHash, name || '', alias]
+        'INSERT INTO users (username, email, password_hash, name, alias, email_verified) VALUES (?, ?, ?, ?, ?, ?)',
+        [trimmedUsername, trimmedEmail, passwordHash, name || '', alias, isHumanVerified ? 1 : 0]
       );
       userId = result.insertId;
     }
 
+    const isHumanVerified = Boolean(req.body.captcha_verified);
+
     // Generate tokens
     const accessToken = jwt.sign(
-      { userId, username, alias },
+      { userId, username: trimmedUsername, alias },
       process.env.JWT_ACCESS_SECRET,
       { expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m' }
     );
@@ -98,21 +102,26 @@ router.post('/register', async (req, res) => {
       [userId, refreshHash, familyId, expiresAt]
     );
 
-    // Send initial verification OTP & 1-click verification link
-    const otp = generateOTP();
-    const verifyToken = uuidv4();
-    const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-    const verificationLink = `${clientUrl}/verify-email?token=${verifyToken}&email=${encodeURIComponent(trimmedEmail)}`;
+    let emailSent = false;
+    let devOtp = undefined;
 
-    await pool.query(
-      'INSERT INTO email_otps (user_id, email, otp_code, token, purpose, expires_at) VALUES (?, ?, ?, ?, "email_verification", ?)',
-      [userId, trimmedEmail, otp, verifyToken, otpExpires]
-    );
-    const emailSent = await sendVerificationOTP(trimmedEmail, name || trimmedUsername, otp, verificationLink).catch(err => {
-      console.error('Email send err:', err);
-      return false;
-    });
+    // If human captcha was NOT solved yet, generate backup OTP
+    if (!isHumanVerified) {
+      const otp = generateOTP();
+      const verifyToken = uuidv4();
+      const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+      const verificationLink = `${clientUrl}/verify-email?token=${verifyToken}&email=${encodeURIComponent(trimmedEmail)}`;
+
+      await pool.query(
+        'INSERT INTO email_otps (user_id, email, otp_code, token, purpose, expires_at) VALUES (?, ?, ?, ?, "email_verification", ?)',
+        [userId, trimmedEmail, otp, verifyToken, otpExpires]
+      );
+      devOtp = otp;
+      sendVerificationOTP(trimmedEmail, name || trimmedUsername, otp, verificationLink)
+        .then(() => { emailSent = true; })
+        .catch(err => { console.error('Email send err:', err); });
+    }
 
     res.status(201).json({
       user: {
@@ -123,16 +132,16 @@ router.post('/register', async (req, res) => {
         alias,
         avatar_url: null,
         bio: null,
-        email_verified: false,
+        email_verified: isHumanVerified,
         skills: [],
       },
       accessToken,
       refreshToken,
-      emailSent: Boolean(emailSent),
-      devOtp: emailSent ? undefined : otp,
-      message: emailSent
-        ? 'Registration successful! Verification email sent.'
-        : 'Registration successful! Verification email queued.',
+      emailSent,
+      devOtp: isHumanVerified ? undefined : devOtp,
+      message: isHumanVerified
+        ? 'Account successfully created and verified! Welcome to Collabry.'
+        : 'Registration successful! Verification email sent.',
     });
   } catch (err) {
     console.error('Register error:', err);
@@ -561,6 +570,73 @@ router.post('/verify-email-otp', async (req, res) => {
   } catch (err) {
     console.error('Verify email OTP error:', err);
     res.status(500).json({ error: { code: 'SERVER_ERROR', message: 'Failed to verify email' } });
+  }
+// POST /api/v1/auth/verify-human (Captcha Puzzle Solved)
+router.post('/verify-human', optionalAuth, async (req, res) => {
+  try {
+    let email = req.body?.email;
+    let userId = req.user?.id;
+
+    if (!userId && email) {
+      const [u] = await pool.query('SELECT id FROM users WHERE email = ? AND deleted_at IS NULL', [email.trim().toLowerCase()]);
+      if (u.length > 0) userId = u[0].id;
+    }
+
+    if (!userId) {
+      return res.status(400).json({ error: { code: 'VALIDATION', message: 'User identifier or email required' } });
+    }
+
+    await pool.query('UPDATE users SET email_verified = 1 WHERE id = ?', [userId]);
+
+    const [users] = await pool.query(
+      'SELECT id, username, email, name, alias, avatar_url, bio, email_verified, role, status FROM users WHERE id = ?',
+      [userId]
+    );
+    if (users.length === 0) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'User not found' } });
+    }
+    const user = users[0];
+
+    const accessToken = jwt.sign(
+      { userId: user.id, username: user.username, alias: user.alias },
+      process.env.JWT_ACCESS_SECRET,
+      { expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m' }
+    );
+
+    const refreshToken = uuidv4();
+    const refreshHash = await bcrypt.hash(refreshToken, 10);
+    const familyId = uuidv4();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await pool.query(
+      'INSERT INTO refresh_tokens (user_id, token_hash, family_id, expires_at) VALUES (?, ?, ?, ?)',
+      [user.id, refreshHash, familyId, expiresAt]
+    );
+
+    const [skills] = await pool.query('SELECT skill FROM user_skills WHERE user_id = ?', [user.id]);
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        alias: user.alias,
+        avatar_url: user.avatar_url,
+        bio: user.bio,
+        role: user.role || 'user',
+        status: user.status || 'active',
+        email_verified: true,
+        skills: skills.map(s => s.skill),
+      },
+      accessToken,
+      refreshToken,
+      message: 'Human verification successful! Your account is now verified.',
+    });
+  } catch (err) {
+    console.error('Verify human error:', err);
+    res.status(500).json({ error: { code: 'SERVER_ERROR', message: 'Verification failed' } });
   }
 });
 

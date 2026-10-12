@@ -4,6 +4,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { connectSocket } from '../services/socket';
 import CollabryLogo from '../components/common/CollabryLogo';
+import HumanVerificationModal from '../components/common/HumanVerificationModal';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
@@ -23,6 +24,33 @@ export default function VerifyEmail() {
   const [countdown, setCountdown] = useState(0);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showCaptcha, setShowCaptcha] = useState(false);
+
+  const handleCaptchaSuccess = async () => {
+    setShowCaptcha(false);
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await api.post('/auth/verify-human', { email: email?.trim() });
+      const { user: userData, accessToken, refreshToken } = res.data;
+      if (accessToken) {
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+        connectSocket(accessToken);
+      }
+      setSuccess('🎉 Security puzzle solved! Account verified successfully.');
+      setTimeout(() => {
+        navigate('/');
+      }, 1200);
+    } catch (err) {
+      setError(err.response?.data?.error?.message || 'Verification failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Sync emailParam from searchParams
   useEffect(() => {
@@ -212,6 +240,37 @@ export default function VerifyEmail() {
           </div>
         )}
 
+        {/* 1-Click Game Verification */}
+        <div style={{ marginBottom: 20 }}>
+          <button
+            type="button"
+            onClick={() => setShowCaptcha(true)}
+            className="btn btn-primary"
+            style={{
+              width: '100%',
+              padding: '13px',
+              fontSize: '14px',
+              fontWeight: 800,
+              background: 'linear-gradient(135deg, #5865F2 0%, #7289da 100%)',
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              boxShadow: '0 4px 14px rgba(88, 101, 242, 0.4)',
+            }}
+          >
+            <span style={{ fontSize: 18 }}>🧩</span>
+            <span>Solve Puzzle to Verify Instantly</span>
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0', gap: 10 }}>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border-medium)' }} />
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>or verify with 6-digit email PIN</span>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border-medium)' }} />
+          </div>
+        </div>
+
         <form onSubmit={handleOtpSubmit}>
           {!emailParam && (
             <div className="form-group">
@@ -300,6 +359,14 @@ export default function VerifyEmail() {
         <div className="switch-link" style={{ marginTop: 16 }}>
           Already verified or wrong email? <Link to="/login">Back to Log In</Link>
         </div>
+
+        <HumanVerificationModal
+          isOpen={showCaptcha}
+          onClose={() => setShowCaptcha(false)}
+          onSuccess={handleCaptchaSuccess}
+          title="Security Challenge"
+          subtitle="Solve the puzzle to verify your account"
+        />
       </div>
     </div>
   );

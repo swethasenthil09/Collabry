@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CollabryLogo from '../components/common/CollabryLogo';
 import GoogleAuthButton from '../components/common/GoogleAuthButton';
+import HumanVerificationModal from '../components/common/HumanVerificationModal';
 
 export default function Register() {
   const { register } = useAuth();
@@ -11,20 +11,36 @@ export default function Register() {
   const [form, setForm] = useState({ username: '', email: '', password: '', name: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e) => {
+  const handleFormSubmit = (e) => {
     e.preventDefault();
     setError('');
+
+    if (!form.username.trim() || !form.email.trim() || !form.password) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+    if (form.password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+
+    // Trigger interactive human verification challenge
+    setShowCaptcha(true);
+  };
+
+  const handleVerificationSuccess = async () => {
+    setShowCaptcha(false);
     setLoading(true);
+    setError('');
     try {
-      const res = await api.post('/auth/register', form);
-      navigate(`/verify-email?email=${encodeURIComponent(form.email)}`, {
-        state: { devOtp: res.data?.devOtp, emailSent: res.data?.emailSent },
-      });
+      await register({ ...form, captcha_verified: true });
+      navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Registration failed');
+      setError(err.response?.data?.error?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -58,7 +74,7 @@ export default function Register() {
           <div style={{ flex: 1, height: '1px', background: 'var(--border-medium)' }} />
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleFormSubmit}>
           <div className="form-group">
             <label htmlFor="name">Display Name</label>
             <input
@@ -112,16 +128,26 @@ export default function Register() {
           <button
             type="submit"
             className="btn btn-primary"
-            style={{ width: '100%', marginTop: 8, padding: '12px' }}
+            style={{ width: '100%', marginTop: 8, padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             disabled={loading}
           >
-            {loading ? 'Creating Account...' : 'Continue'}
+            <span>{loading ? 'Verifying & Creating Account...' : 'Verify & Create Account'}</span>
+            <span style={{ fontSize: 16 }}>🧩</span>
           </button>
         </form>
 
         <div className="switch-link">
           Already have an account? <Link to="/login">Log In</Link>
         </div>
+
+        {/* Gamified Human Verification Puzzle Challenge */}
+        <HumanVerificationModal
+          isOpen={showCaptcha}
+          onClose={() => setShowCaptcha(false)}
+          onSuccess={handleVerificationSuccess}
+          title="Prove You Are Human"
+          subtitle="Slide the piece or spot the difference to verify"
+        />
       </div>
     </div>
   );
