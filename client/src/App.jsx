@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import VerifyEmail from './pages/VerifyEmail';
+import GitHubCallback from './pages/GitHubCallback';
 import AppShell from './components/layout/AppShell';
 import './index.css';
 
@@ -32,6 +33,7 @@ function App() {
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/auth/github/callback" element={<GitHubCallback />} />
             <Route path="/*" element={<ProtectedRoute><AppShell /></ProtectedRoute>} />
           </Routes>
         </AuthProvider>

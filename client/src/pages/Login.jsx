@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import CollabryLogo from '../components/common/CollabryLogo';
 import GoogleAuthButton from '../components/common/GoogleAuthButton';
+import GitHubAuthButton from '../components/common/GitHubAuthButton';
 
 export default function Login() {
   const { login } = useAuth();
@@ -40,8 +41,11 @@ export default function Login() {
 
         {error && <div className="error-msg">{error}</div>}
 
-        {/* 1-Click Google Sign-In */}
-        <GoogleAuthButton text="signin_with" defaultEmail={email} onError={(err) => setError(err)} />
+        {/* 1-Click Social Sign-In (Google & GitHub) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', alignItems: 'center' }}>
+          <GoogleAuthButton text="signin_with" defaultEmail={email} onError={(err) => setError(err)} />
+          <GitHubAuthButton text="signin_with" defaultUsername="" onError={(err) => setError(err)} />
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', margin: '14px 0', gap: 10 }}>
           <div style={{ flex: 1, height: '1px', background: 'var(--border-medium)' }} />

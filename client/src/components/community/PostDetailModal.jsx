@@ -93,7 +93,7 @@ export default function PostDetailModal({ postId, onClose, onPostUpdated }) {
       const res = await api.post(`/posts/comments/${commentId}/vote`, { vote_type: newVote });
       
       const updateTree = (list) =>
-        list.map((c) => {
+        (list || []).map((c) => {
           if (c.id === commentId) {
             return {
               ...c,
@@ -104,17 +104,17 @@ export default function PostDetailModal({ postId, onClose, onPostUpdated }) {
           return c;
         });
 
-      setPost({
-        ...post,
-        comments: updateTree(post.comments),
-      });
+      setPost((prev) => ({
+        ...prev,
+        comments: updateTree(prev?.comments),
+      }));
     } catch (err) {
       console.error('Comment vote error:', err);
     }
   };
 
   const findComment = (list, id) => {
-    return list.find(c => c.id === id);
+    return Array.isArray(list) ? list.find((c) => c.id === id) : null;
   };
 
   const handleCommentReaction = async (commentId, emoji) => {

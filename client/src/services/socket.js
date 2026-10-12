@@ -1,6 +1,17 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://collabry-server.onrender.com';
+const resolveSocketUrl = () => {
+  let url = import.meta.env.VITE_SOCKET_URL;
+  if (!url) {
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      return 'http://localhost:5000';
+    }
+    return 'https://collabry-server.onrender.com';
+  }
+  return url.replace(/\/api\/v1\/?$/, '').replace(/\/+$/, '');
+};
+
+const SOCKET_URL = resolveSocketUrl();
 
 let socket = null;
 
@@ -28,7 +39,7 @@ export function connectSocket(token) {
 
 export function getSocket() {
   if (!socket) {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
     if (token) {
       return connectSocket(token);
     }

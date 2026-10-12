@@ -62,6 +62,17 @@ export function AuthProvider({ children }) {
     return userData;
   };
 
+  const githubLogin = async (data) => {
+    const res = await api.post('/auth/github', data);
+    const { user: userData, accessToken, refreshToken } = res.data;
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    connectSocket(accessToken);
+    return userData;
+  };
+
   const logout = () => {
     const refreshToken = localStorage.getItem('refreshToken');
     if (refreshToken) {
@@ -75,7 +86,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, googleLogin, logout, loading, setUser }}>
+    <AuthContext.Provider value={{ user, login, register, googleLogin, githubLogin, logout, loading, setUser }}>
       {children}
     </AuthContext.Provider>
   );

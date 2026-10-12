@@ -1,6 +1,22 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://collabry-server.onrender.com/api/v1';
+const resolveApiBase = () => {
+  let base = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  if (!base) {
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      base = 'http://localhost:5000/api/v1';
+    } else {
+      base = 'https://collabry-server.onrender.com/api/v1';
+    }
+  }
+  base = base.replace(/\/+$/, '');
+  if (!base.endsWith('/api/v1')) {
+    base = `${base}/api/v1`;
+  }
+  return base;
+};
+
+const API_BASE = resolveApiBase();
 
 export const SERVER_BASE_URL = API_BASE.replace(/\/api\/v1\/?$/, '');
 
@@ -18,6 +34,7 @@ export const resolveMediaUrl = (url) => {
 
 const api = axios.create({
   baseURL: API_BASE,
+  timeout: 15000,
   withCredentials: true,
 });
 

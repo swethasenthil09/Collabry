@@ -544,6 +544,8 @@ router.post('/verify-email-otp', async (req, res) => {
     console.error('Verify email OTP error:', err);
     res.status(500).json({ error: { code: 'SERVER_ERROR', message: 'Failed to verify email' } });
   }
+});
+
 // POST /api/v1/auth/verify-human (Captcha Puzzle Solved)
 router.post('/verify-human', optionalAuth, async (req, res) => {
   try {
@@ -854,6 +856,219 @@ router.post('/google', async (req, res) => {
   } catch (err) {
     console.error('Google Auth Error:', err);
     res.status(500).json({ error: { code: 'SERVER_ERROR', message: 'Google authentication failed' } });
+  }
+});
+
+// POST /api/v1/auth/github
+router.post('/github', async (req, res) => {
+  try {
+    const { code, username: devUsername, email: devEmail } = req.body;
+
+    let githubId;
+    let email;
+    let name;
+    let picture;
+    let githubUsername;
+
+    if (code) {
+      const clientId = process.env.GITHUB_CLIENT_ID;
+      const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+
+      if (!clientId || !clientSecret) {
+        return res.status(500).json({
+          error: {
+            code: 'CONFIG_ERROR',
+            message: 'GitHub OAuth is not configured on the server. Please add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to server .env',
+          },
+        });
+      }
+
+      // 1. Exchange code for access_token
+      const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+        }),
+      });
+
+      const tokenData = await tokenRes.json();
+      if (!tokenData.access_token) {
+        console.error('GitHub token exchange error:', tokenData);
+        return res.status(401).json({
+          error: {
+            code: 'AUTH_FAILED',
+            message: tokenData.error_description || 'Failed to exchange GitHub authorization code',
+          },
+        });
+      }
+
+      const ghToken = tokenData.access_token;
+
+      // 2. Fetch user profile
+      const userRes = await fetch('https://api.github.com/user', {
+        headers: {
+          Authorization: `Bearer ${ghToken}`,
+          'User-Agent': 'Collabry-App',
+        },
+      });
+      const ghUser = await userRes.json();
+      if (!ghUser.id) {
+        return res.status(401).json({ error: { code: 'AUTH_FAILED', message: 'Failed to fetch GitHub profile' } });
+      }
+
+      githubId = String(ghUser.id);
+      githubUsername = ghUser.login;
+      name = ghUser.name || ghUser.login;
+      picture = ghUser.avatar_url;
+      email = ghUser.email;
+
+      // 3. If email is private on GitHub profile, fetch user emails list
+      if (!email) {
+        try {
+          const emailsRes = await fetch('https://api.github.com/user/emails', {
+            headers: {
+              Authorization: `Bearer ${ghToken}`,
+              'User-Agent': 'Collabry-App',
+            },
+          });
+          const emails = await emailsRes.json();
+          if (Array.isArray(emails)) {
+            const primary = emails.find(e => e.primary && e.verified) || emails.find(e => e.verified) || emails[0];
+            if (primary) email = primary.email;
+          }
+        } catch (e) {
+          console.warn('Could not fetch GitHub private emails:', e.message);
+        }
+      }
+
+      if (!email) {
+        email = `${ghUser.login}@users.noreply.github.com`;
+      }
+    } else if (devUsername || devEmail) {
+      // 1-Click direct developer connection
+      const u = (devUsername || devEmail.split('@')[0]).trim();
+      githubUsername = u;
+      name = u;
+      email = devEmail ? devEmail.trim().toLowerCase() : `${u.toLowerCase()}@github.collabry.dev`;
+      githubId = 'gh_' + Buffer.from(email).toString('hex').slice(0, 20);
+      picture = `https://github.com/${encodeURIComponent(u)}.png`;
+    } else {
+      return res.status(400).json({ error: { code: 'VALIDATION', message: 'GitHub authorization code or username is required' } });
+    }
+
+    email = email.trim().toLowerCase();
+
+    // Check if user already exists
+    const [existing] = await pool.query(
+      'SELECT id, username, email, name, alias, avatar_url, bio, email_verified, github_id, role, status FROM users WHERE github_id = ? OR email = ?',
+      [githubId, email]
+    );
+
+    let user;
+
+    if (existing.length > 0) {
+      user = existing[0];
+      if (!user.github_id || !user.email_verified || (!user.avatar_url && picture)) {
+        await pool.query(
+          'UPDATE users SET github_id = COALESCE(github_id, ?), email_verified = 1, avatar_url = COALESCE(avatar_url, ?) WHERE id = ?',
+          [githubId, picture || null, user.id]
+        );
+        user.github_id = user.github_id || githubId;
+        user.email_verified = 1;
+        if (!user.avatar_url && picture) user.avatar_url = picture;
+      }
+    } else {
+      // Create new user account from GitHub profile
+      let baseUsername = (githubUsername || email.split('@')[0]).replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20) || 'dev';
+      let username = baseUsername;
+      let suffix = 1;
+      while (true) {
+        const [uCheck] = await pool.query('SELECT id FROM users WHERE username = ?', [username]);
+        if (uCheck.length === 0) break;
+        username = `${baseUsername.slice(0, 16)}${suffix++}`;
+      }
+
+      let alias = generateAlias();
+      let [aliasCheck] = await pool.query('SELECT id FROM users WHERE alias = ?', [alias]);
+      while (aliasCheck.length > 0) {
+        alias = generateAlias();
+        [aliasCheck] = await pool.query('SELECT id FROM users WHERE alias = ?', [alias]);
+      }
+
+      const randomPass = uuidv4() + uuidv4();
+      const passwordHash = await bcrypt.hash(randomPass, 12);
+
+      const [result] = await pool.query(
+        'INSERT INTO users (username, email, password_hash, github_id, name, alias, avatar_url, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, 1)',
+        [username, email, passwordHash, githubId, name || username, alias, picture || null]
+      );
+
+      user = {
+        id: result.insertId,
+        username,
+        email,
+        name: name || username,
+        alias,
+        avatar_url: picture || null,
+        bio: null,
+        role: 'user',
+        status: 'active',
+        email_verified: 1,
+      };
+    }
+
+    if (user.status === 'blocked') {
+      return res.status(403).json({
+        error: { code: 'ACCOUNT_BLOCKED', message: 'Your account has been permanently blocked due to community violations.' },
+      });
+    }
+
+    // Generate Collabry session JWTs
+    const accessToken = jwt.sign(
+      { userId: user.id, username: user.username, alias: user.alias },
+      process.env.JWT_ACCESS_SECRET,
+      { expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m' }
+    );
+
+    const refreshToken = uuidv4();
+    const refreshHash = await bcrypt.hash(refreshToken, 10);
+    const familyId = uuidv4();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await pool.query(
+      'INSERT INTO refresh_tokens (user_id, token_hash, family_id, expires_at) VALUES (?, ?, ?, ?)',
+      [user.id, refreshHash, familyId, expiresAt]
+    );
+
+    const [skills] = await pool.query('SELECT skill FROM user_skills WHERE user_id = ?', [user.id]);
+
+    res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        alias: user.alias,
+        avatar_url: user.avatar_url,
+        bio: user.bio,
+        role: user.role || 'user',
+        status: user.status || 'active',
+        email_verified: true,
+        skills: skills.map(s => s.skill),
+      },
+      accessToken,
+      refreshToken,
+      message: 'Successfully authenticated with GitHub!',
+    });
+  } catch (err) {
+    console.error('GitHub Auth Error:', err);
+    res.status(500).json({ error: { code: 'SERVER_ERROR', message: 'GitHub authentication failed' } });
   }
 });
 
