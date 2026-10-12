@@ -291,7 +291,6 @@ textarea::placeholder {
   height: 100%;
 }
 
-.-body.full-width,
 .main-body.full-width {
   max-width: 100% !important;
   padding: 16px 20px;
@@ -1352,7 +1351,7 @@ textarea::placeholder {
 }
 
 .kanban-card {
-  background-color: var(--bg-);
+  background-color: var(--bg-secondary, #2b2d31);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
@@ -2713,6 +2712,28 @@ textarea::placeholder {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Live Broadcast responsive layout */
+  .live-broadcast-modal-inner {
+    flex-direction: column !important;
+    height: 94vh !important;
+  }
+
+  .live-video-chat-sidebar {
+    width: 100% !important;
+    height: 240px !important;
+    border-left: none !important;
+    border-top: 1px solid var(--border-medium) !important;
+  }
+
+  /* Canvas floating toolbar adapts on mobile */
+  .canvas-floating-toolbar {
+    top: 8px !important;
+    left: 8px !important;
+    padding: 6px 10px !important;
+    gap: 6px !important;
+    max-width: calc(100vw - 16px) !important;
   }
 }
 

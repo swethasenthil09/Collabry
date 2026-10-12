@@ -57,6 +57,7 @@ export default function LiveVideoBroadcastView({
       onClick={onClose}
     >
       <div
+        className="live-broadcast-modal-inner"
         style={{
           width: '100%',
           maxWidth: '1200px',
@@ -511,6 +512,7 @@ export default function LiveVideoBroadcastView({
 
         {/* Right Live Chat Sidebar */}
         <div
+          className="live-video-chat-sidebar"
           style={{
             width: '340px',
             background: 'var(--bg-card)',

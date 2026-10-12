@@ -474,7 +474,7 @@ export default function ProjectView({ onProjectUpdated }) {
               </div>
             )}
             {activeTab === 'canvas' && (
-              <div className="main-body full-width" style={{ height: '100%', padding: 0 }}>
+              <div style={{ flex: 1, minHeight: 0, height: '100%', width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <ProjectCanvas project={project} />
               </div>
             )}

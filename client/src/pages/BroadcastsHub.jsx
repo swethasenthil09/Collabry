@@ -801,6 +801,7 @@ export default function BroadcastsHub() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 16,
+                    flexWrap: 'wrap',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)',
                   }}

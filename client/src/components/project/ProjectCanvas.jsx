@@ -125,24 +125,38 @@ export default function ProjectCanvas({ project }) {
     };
   }, [project?.id]);
 
-  // Handle canvas resize on mount / window resize
+  // Handle canvas resize on mount, container resize, and window resize
   useEffect(() => {
-    const handleResize = () => {
-      if (canvasRef.current) {
-        const canvas = canvasRef.current;
-        const rect = canvas.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        const ctx = canvas.getContext('2d');
-        ctx.scale(dpr, dpr);
-        redrawCanvas(elements);
-      }
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const container = canvas.parentElement;
+
+    const resizeCanvas = () => {
+      if (!canvas || !container) return;
+      const rect = container.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      redrawCanvas(elements);
     };
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    resizeCanvas();
+    const raf = requestAnimationFrame(resizeCanvas);
+
+    let observer = null;
+    if (typeof ResizeObserver !== 'undefined' && container) {
+      observer = new ResizeObserver(() => {
+        resizeCanvas();
+      });
+      observer.observe(container);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      if (observer) observer.disconnect();
+      window.removeEventListener('resize', resizeCanvas);
+    };
   }, [elements, activeMode]);
 
   // Click outside listener for Export Dropdown
@@ -793,7 +807,7 @@ export default function ProjectCanvas({ project }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-primary)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', flex: 1, minHeight: 0, background: 'var(--bg-primary)' }}>
       {/* Top Collaboration Sub-Header */}
       <div style={{
         display: 'flex',
@@ -999,13 +1013,12 @@ export default function ProjectCanvas({ project }) {
 
       {/* Mode 1: Whiteboard Canvas */}
       {activeMode === 'canvas' && (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, position: 'relative', overflow: 'hidden' }}>
-          {/* Canvas Floating Toolbar */}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
           {isViewer ? (
-            <div style={{
+            <div className="canvas-floating-toolbar" style={{
               position: 'absolute',
               top: 14,
-              left: 20,
+              left: 14,
               zIndex: 10,
               background: 'rgba(23, 24, 27, 0.94)',
               backdropFilter: 'blur(12px)',
@@ -1018,16 +1031,17 @@ export default function ProjectCanvas({ project }) {
               boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
               fontSize: 12,
               color: 'var(--text-muted)',
+              maxWidth: 'calc(100% - 28px)',
             }}>
               <IconEye size={14} />
               <span style={{ fontWeight: 600, color: 'var(--text-normal)' }}>Viewer Mode</span>
               <span style={{ opacity: 0.6 }}>• Canvas is read-only</span>
             </div>
           ) : (
-            <div style={{
+            <div className="canvas-floating-toolbar" style={{
               position: 'absolute',
               top: 14,
-              left: 20,
+              left: 14,
               zIndex: 10,
               background: 'rgba(23, 24, 27, 0.94)',
               backdropFilter: 'blur(12px)',
@@ -1036,8 +1050,10 @@ export default function ProjectCanvas({ project }) {
               padding: '8px 12px',
               display: 'flex',
               alignItems: 'center',
-              gap: 12,
+              gap: 10,
               boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+              maxWidth: 'calc(100% - 28px)',
+              flexWrap: 'wrap',
             }}>
               {/* Tool Selection */}
               <div style={{ display: 'flex', gap: 4 }}>
@@ -1124,7 +1140,7 @@ export default function ProjectCanvas({ project }) {
           )}
 
           {/* Canvas Board Container */}
-          <div style={{ flex: 1, width: '100%', height: '100%', position: 'relative', overflow: 'hidden', cursor: isViewer ? 'default' : (tool === 'eraser' ? 'cell' : 'crosshair') }}>
+          <div style={{ flex: 1, minHeight: 0, width: '100%', height: '100%', position: 'relative', overflow: 'hidden', cursor: isViewer ? 'default' : (tool === 'eraser' ? 'cell' : 'crosshair') }}>
             <canvas
               ref={canvasRef}
               onMouseDown={handlePointerDown}
