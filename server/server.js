@@ -77,7 +77,6 @@ const corsMiddleware = cors({
 });
 
 app.use(corsMiddleware);
-app.options('*', corsMiddleware);
 const path = require('path');
 const fs = require('fs');
 
