@@ -8,7 +8,7 @@ const { authenticate, optionalAuth } = require('../middleware/auth');
 const { generateAlias } = require('../utils/helpers');
 const { generateOTP, sendVerificationOTP, sendPasswordResetOTP } = require('../utils/mailer');
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CALENDAR_CLIENT_ID);
 const router = express.Router();
 
 // POST /api/v1/auth/register
@@ -716,8 +716,12 @@ router.post('/google', async (req, res) => {
           name: userEmail.split('@')[0],
           picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userEmail)}`,
         };
-      } else {
-        const audience = process.env.GOOGLE_CLIENT_ID?.trim();
+        const allowedAudiences = [
+          process.env.GOOGLE_CLIENT_ID?.trim(),
+          process.env.GOOGLE_CALENDAR_CLIENT_ID?.trim(),
+          process.env.VITE_GOOGLE_CLIENT_ID?.trim(),
+        ].filter(Boolean);
+        const audience = allowedAudiences.length === 1 ? allowedAudiences[0] : (allowedAudiences.length > 1 ? allowedAudiences : undefined);
         try {
           const ticket = await googleClient.verifyIdToken({
             idToken: credential,
