@@ -29,9 +29,6 @@ export default function Sidebar({ communities, projects, dms = [], groups = [], 
             title="Click app icon to collapse navigation"
           >
             <CollabryLogo size={24} showText={true} />
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'var(--bg-subtle)', padding: '2px 5px', borderRadius: '4px', fontWeight: 700 }}>
-              v1.0
-            </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

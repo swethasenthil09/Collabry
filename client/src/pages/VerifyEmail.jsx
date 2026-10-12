@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { connectSocket } from '../services/socket';
@@ -8,6 +8,7 @@ import CollabryLogo from '../components/common/CollabryLogo';
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { setUser } = useAuth();
 
   const tokenParam = searchParams.get('token');
@@ -15,6 +16,7 @@ export default function VerifyEmail() {
 
   const [email, setEmail] = useState(emailParam);
   const [otp, setOtp] = useState('');
+  const [devOtp, setDevOtp] = useState(location.state?.devOtp || '');
   const [loading, setLoading] = useState(false);
   const [autoVerifying, setAutoVerifying] = useState(Boolean(tokenParam));
   const [resending, setResending] = useState(false);
@@ -112,6 +114,9 @@ export default function VerifyEmail() {
     try {
       const res = await api.post('/auth/resend-verification', { email: email.trim() });
       setSuccess(res.data.message || 'New verification link and PIN sent!');
+      if (res.data.devOtp) {
+        setDevOtp(res.data.devOtp);
+      }
       setCountdown(60);
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Failed to resend verification email.');
@@ -167,6 +172,43 @@ export default function VerifyEmail() {
             }}
           >
             {success}
+          </div>
+        )}
+
+        {devOtp && (
+          <div
+            style={{
+              background: 'rgba(88, 101, 242, 0.12)',
+              border: '1px solid rgba(88, 101, 242, 0.4)',
+              borderRadius: 'var(--radius-md)',
+              padding: '12px 16px',
+              marginBottom: '16px',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 4 }}>
+              Instant Verification PIN:
+            </div>
+            <div style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '6px', color: '#ffffff', fontFamily: 'monospace' }}>
+              {devOtp}
+            </div>
+            <button
+              type="button"
+              onClick={() => setOtp(devOtp)}
+              style={{
+                marginTop: 8,
+                background: 'var(--discord-blurple)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '5px 14px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Click to Auto-fill PIN
+            </button>
           </div>
         )}
 

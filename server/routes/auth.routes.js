@@ -103,19 +103,22 @@ router.post('/register', async (req, res) => {
     const verifyToken = uuidv4();
     const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-    const verificationLink = `${clientUrl}/verify-email?token=${verifyToken}&email=${encodeURIComponent(email)}`;
+    const verificationLink = `${clientUrl}/verify-email?token=${verifyToken}&email=${encodeURIComponent(trimmedEmail)}`;
 
     await pool.query(
       'INSERT INTO email_otps (user_id, email, otp_code, token, purpose, expires_at) VALUES (?, ?, ?, ?, "email_verification", ?)',
-      [userId, email, otp, verifyToken, otpExpires]
+      [userId, trimmedEmail, otp, verifyToken, otpExpires]
     );
-    sendVerificationOTP(email, name || username, otp, verificationLink).catch(err => console.error('Email send err:', err));
+    const emailSent = await sendVerificationOTP(trimmedEmail, name || trimmedUsername, otp, verificationLink).catch(err => {
+      console.error('Email send err:', err);
+      return false;
+    });
 
     res.status(201).json({
       user: {
         id: userId,
-        username,
-        email,
+        username: trimmedUsername,
+        email: trimmedEmail,
         name: name || '',
         alias,
         avatar_url: null,
@@ -125,7 +128,11 @@ router.post('/register', async (req, res) => {
       },
       accessToken,
       refreshToken,
-      message: 'Registration successful! Verification email sent.',
+      emailSent: Boolean(emailSent),
+      devOtp: emailSent ? undefined : otp,
+      message: emailSent
+        ? 'Registration successful! Verification email sent.'
+        : 'Registration successful! Verification email queued.',
     });
   } catch (err) {
     console.error('Register error:', err);
@@ -341,10 +348,14 @@ router.get('/me', authenticate, async (req, res) => {
   }
 });
 
-// POST /api/v1/auth/resend-verification
-router.post('/resend-verification', async (req, res) => {
+// POST /api/v1/auth/resend-verification & /api/v1/auth/send-verification-otp
+router.post(['/resend-verification', '/send-verification-otp'], optionalAuth, async (req, res) => {
   try {
-    const { email } = req.body;
+    let email = req.body?.email;
+    if (!email && req.user?.id) {
+      const [u] = await pool.query('SELECT email FROM users WHERE id = ?', [req.user.id]);
+      if (u.length > 0) email = u[0].email;
+    }
     if (!email) {
       return res.status(400).json({ error: { code: 'VALIDATION', message: 'Email address is required' } });
     }
@@ -380,9 +391,18 @@ router.post('/resend-verification', async (req, res) => {
       [user.id, user.email, otp, verifyToken, expiresAt]
     );
 
-    sendVerificationOTP(user.email, user.name || user.username, otp, verificationLink).catch(err => console.error('Email send err:', err));
+    const emailSent = await sendVerificationOTP(user.email, user.name || user.username, otp, verificationLink).catch(err => {
+      console.error('Email send err:', err);
+      return false;
+    });
 
-    res.json({ message: 'A new verification link and 6-digit PIN have been sent to your email.' });
+    res.json({
+      emailSent: Boolean(emailSent),
+      devOtp: emailSent ? undefined : otp,
+      message: emailSent
+        ? 'A new verification link and 6-digit PIN have been sent to your email.'
+        : 'Verification PIN generated.',
+    });
   } catch (err) {
     console.error('Resend verification error:', err);
     res.status(500).json({ error: { code: 'SERVER_ERROR', message: 'Failed to resend verification email' } });

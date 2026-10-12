@@ -204,16 +204,17 @@ async function sendVerificationOTP(email, name, otp, verificationLink) {
       console.log(`🌐 Preview Email in Browser: ${testUrl}`);
       console.log('======================================================\n');
     }
+    return true;
   } catch (err) {
     if (err.message && (err.message.includes('525') || err.message.includes('Unauthorized IP'))) {
       console.warn('⚠️ Brevo SMTP Note: Your current IP address is not authorized in your Brevo account (525 5.7.1).');
-      console.warn('👉 To deliver emails to your real inbox via Brevo: Whitelist your IP in Brevo Dashboard -> SMTP & API -> Authorized IP addresses, or use Gmail App Password.');
+      console.warn('👉 To deliver emails to your real inbox via Brevo: Whitelist your IP in Brevo Dashboard -> Settings -> Security -> Authorized IPs, or Deactivate IP blocking.');
       console.warn('💡 In the meantime, use the 6-Digit PIN or 1-Click Link printed above to verify immediately!\n');
     } else {
       console.warn('⚠️ Mail delivery note:', err.message);
     }
+    return false;
   }
-  return true;
 }
 
 /**
@@ -277,6 +278,7 @@ async function sendPasswordResetOTP(email, name, otp) {
       console.log(`🌐 Preview Email in Browser: ${testUrl}`);
       console.log('======================================================\n');
     }
+    return true;
   } catch (err) {
     if (err.message && (err.message.includes('525') || err.message.includes('Unauthorized IP'))) {
       console.warn('⚠️ Brevo SMTP Note: Your current IP address is not authorized in your Brevo account (525 5.7.1).');
@@ -284,8 +286,8 @@ async function sendPasswordResetOTP(email, name, otp) {
     } else {
       console.warn('⚠️ Mail delivery note:', err.message);
     }
+    return false;
   }
-  return true;
 }
 
 module.exports = {

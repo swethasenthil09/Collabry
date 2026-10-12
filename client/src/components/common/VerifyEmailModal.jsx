@@ -6,6 +6,7 @@ import { IconCheck, IconX, IconMail } from './Icons';
 export default function VerifyEmailModal({ onClose, onVerified }) {
   const { user, setUser } = useAuth();
   const [otp, setOtp] = useState('');
+  const [devOtp, setDevOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [countdown, setCountdown] = useState(60);
@@ -59,6 +60,9 @@ export default function VerifyEmailModal({ onClose, onVerified }) {
     try {
       const res = await api.post('/auth/send-verification-otp');
       setMessage({ type: 'success', text: res.data.message || 'A new verification PIN has been sent!' });
+      if (res.data.devOtp) {
+        setDevOtp(res.data.devOtp);
+      }
       setCountdown(60);
     } catch (err) {
       setMessage({
@@ -104,6 +108,43 @@ export default function VerifyEmailModal({ onClose, onVerified }) {
               }}
             >
               {message.text}
+            </div>
+          )}
+
+          {devOtp && (
+            <div
+              style={{
+                background: 'rgba(88, 101, 242, 0.12)',
+                border: '1px solid rgba(88, 101, 242, 0.4)',
+                borderRadius: 'var(--radius-md)',
+                padding: '10px 14px',
+                marginBottom: '14px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4 }}>
+                Instant Verification PIN:
+              </div>
+              <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '4px', color: '#ffffff', fontFamily: 'monospace' }}>
+                {devOtp}
+              </div>
+              <button
+                type="button"
+                onClick={() => setOtp(devOtp)}
+                style={{
+                  marginTop: 6,
+                  background: 'var(--discord-blurple)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Click to Auto-fill PIN
+              </button>
             </div>
           )}
 

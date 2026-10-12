@@ -19,8 +19,10 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      await api.post('/auth/register', form);
-      navigate(`/verify-email?email=${encodeURIComponent(form.email)}`);
+      const res = await api.post('/auth/register', form);
+      navigate(`/verify-email?email=${encodeURIComponent(form.email)}`, {
+        state: { devOtp: res.data?.devOtp, emailSent: res.data?.emailSent },
+      });
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Registration failed');
     } finally {
