@@ -26,10 +26,29 @@ const { initializeSocket } = require('./sockets/chat');
 const app = express();
 const server = http.createServer(app);
 
-// Dynamic CORS origin handler to support Vercel deployments, localhost, and custom domains
+// Explicit CORS configuration for Vercel, localhost, and credentials
+const allowedOrigins = [
+  'https://collabry-wheat.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5000',
+];
+
 const corsOriginHandler = (origin, callback) => {
-  // Allow all incoming origins dynamically so credentials and Vercel domains work seamlessly
-  callback(null, origin || true);
+  // Allow requests with no origin (e.g. mobile apps, curl, internal server pings)
+  if (!origin) return callback(null, true);
+
+  // Return the EXACT requesting origin string so browsers never see wildcard '*' with credentials
+  if (
+    allowedOrigins.includes(origin) ||
+    origin.endsWith('.vercel.app') ||
+    origin.includes('localhost')
+  ) {
+    return callback(null, origin);
+  }
+
+  // Fallback: reflect exact origin
+  return callback(null, origin);
 };
 
 // Socket.IO
@@ -49,10 +68,16 @@ app.use(helmet({
   crossOriginResourcePolicy: false,
   frameguard: false, // Allow Live Demo Sandbox iframes to load without X-Frame-Options blocking
 }));
-app.use(cors({
+
+const corsMiddleware = cors({
   origin: corsOriginHandler,
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+});
+
+app.use(corsMiddleware);
+app.options('*', corsMiddleware);
 const path = require('path');
 const fs = require('fs');
 
