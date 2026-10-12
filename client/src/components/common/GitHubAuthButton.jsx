@@ -10,7 +10,7 @@ export default function GitHubAuthButton({ text = 'signin_with', defaultUsername
   const [showPrompt, setShowPrompt] = useState(false);
   const [usernameInput, setUsernameInput] = useState(defaultUsername || '');
 
-  const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+  const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID || import.meta.env.GITHUB_CLIENT_ID;
 
   const handleGitHubClick = () => {
     if (clientId && clientId.trim() && !clientId.includes('your_github_client_id')) {
