@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import {
@@ -80,11 +81,27 @@ export default function OmnisearchModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000, alignItems: 'flex-start', paddingTop: '10vh' }}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        alignItems: 'flex-start',
+        paddingTop: '8vh',
+        paddingLeft: '12px',
+        paddingRight: '12px',
+      }}
+    >
       <div
         className="modal"
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
         style={{
           maxWidth: 640,
           padding: 0,
@@ -384,6 +401,7 @@ export default function OmnisearchModal({ isOpen, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,11 +1,11 @@
 const express = require('express');
 const pool = require('../config/db');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
 // GET /api/v1/search/omni - Global Omnisearch across posts, communities, projects, users, broadcasts
-router.get('/omni', authenticate, async (req, res) => {
+router.get('/omni', optionalAuth, async (req, res) => {
   try {
     const q = (req.query.q || '').trim();
     const category = req.query.category || 'all';

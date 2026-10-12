@@ -820,4 +820,22 @@ router.post('/logout', optionalAuth, async (req, res) => {
   }
 });
 
+// GET /api/v1/auth/email-status (Diagnostic to verify SMTP configuration on Render / Cloud)
+router.get('/email-status', async (req, res) => {
+  const host = process.env.SMTP_HOST || 'not_set';
+  const hasUser = Boolean(process.env.SMTP_USER);
+  const userMasked = process.env.SMTP_USER ? process.env.SMTP_USER.slice(0, 4) + '***' : 'not_set';
+  const hasPass = Boolean(process.env.SMTP_PASS);
+  const hasBrevoKey = Boolean(process.env.BREVO_API_KEY);
+  const from = process.env.SMTP_FROM || 'not_set';
+  res.json({
+    configured: (hasUser && hasPass) || hasBrevoKey,
+    host,
+    user: userMasked,
+    hasPass,
+    hasBrevoKey,
+    from,
+  });
+});
+
 module.exports = router;

@@ -689,7 +689,6 @@ textarea::placeholder {
 /* ============================================================
    3. MAIN CONTENT COLUMN (REDDIT FEEDS & PROJECT VIEWS)
    ============================================================ */
-.-content,
 .main-content {
   flex: 1;
   display: flex;
@@ -700,7 +699,6 @@ textarea::placeholder {
   height: 100%;
 }
 
-.-header,
 .main-header {
   height: 48px;
   padding: 0 16px;
@@ -712,7 +710,6 @@ textarea::placeholder {
   flex-shrink: 0;
 }
 
-.-header h2,
 .main-header h2 {
   font-size: 16px;
   font-weight: 700;
@@ -744,7 +741,6 @@ textarea::placeholder {
   gap: 8px;
 }
 
-.-body,
 .main-body {
   flex: 1;
   overflow-y: auto;
@@ -2506,13 +2502,14 @@ textarea::placeholder {
     width: 240px;
   }
 
-  .-content {
+  .main-content {
     width: 100vw !important;
     max-width: 100vw !important;
     height: 100vh;
+    overflow-x: hidden;
   }
 
-  .-header {
+  .main-header {
     height: auto;
     min-height: 44px;
     padding: 8px 12px;
@@ -2520,12 +2517,51 @@ textarea::placeholder {
     gap: 8px;
   }
 
-  .-header h2 {
+  .main-header h2 {
     font-size: 15px;
   }
 
-  .-body {
+  .main-body {
     padding: 12px 10px;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  /* Responsive Search & Sort Controls on Mobile */
+  .feed-sort-bar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 8px 6px !important;
+    height: auto !important;
+  }
+
+  .feed-search-wrapper {
+    width: 100% !important;
+    margin-top: 4px !important;
+  }
+
+  .feed-search-wrapper input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .post-meta {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    font-size: 11px !important;
+  }
+
+  .post-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .post-title {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
   }
 
   /* Meeting cards stack cleanly without horizontal overflow */

@@ -48,17 +48,55 @@ export default function HomeFeed() {
   };
 
   const userSkills = user?.skills || [];
-  const displayedPosts = matchOnly
-    ? posts.filter(post => {
-        if (post.post_type !== 'collaboration_request') return false;
-        const postSkills = Array.isArray(post.required_skills)
+  const displayedPosts = posts.filter(post => {
+    // 1. Keyword search filter
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      const inTitle = (post.title || '').toLowerCase().includes(q);
+      const inBody = (post.body || '').toLowerCase().includes(q);
+      const inCategory = (post.custom_category || '').toLowerCase().includes(q);
+      const inAuthor = (
+        (post.author?.display_name || '') + ' ' +
+        (post.author_name || '') + ' ' +
+        (post.author_username || '') + ' ' +
+        (post.author_alias || '')
+      ).toLowerCase().includes(q);
+      const inCommunity = (
+        (post.community?.name || '') + ' ' +
+        (post.community?.slug || '') + ' ' +
+        (post.community_name || '')
+      ).toLowerCase().includes(q);
+      let inSkills = false;
+      try {
+        const skills = Array.isArray(post.required_skills)
+          ? post.required_skills
+          : typeof post.required_skills === 'string'
+          ? (post.required_skills.startsWith('[') ? JSON.parse(post.required_skills) : [post.required_skills])
+          : [];
+        inSkills = skills.some(s => String(s).toLowerCase().includes(q));
+      } catch (e) {}
+
+      if (!inTitle && !inBody && !inCategory && !inAuthor && !inCommunity && !inSkills) {
+        return false;
+      }
+    }
+
+    // 2. Skill match filter
+    if (matchOnly) {
+      if (post.post_type !== 'collaboration_request') return false;
+      let postSkills = [];
+      try {
+        postSkills = Array.isArray(post.required_skills)
           ? post.required_skills
           : JSON.parse(post.required_skills || '[]');
-        return postSkills.some(s =>
-          userSkills.some(us => us.toLowerCase() === s.toLowerCase())
-        );
-      })
-    : posts;
+      } catch (e) {}
+      return postSkills.some(s =>
+        userSkills.some(us => us.toLowerCase() === s.toLowerCase())
+      );
+    }
+
+    return true;
+  });
 
   return (
     <>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { IconCheck, IconX, IconMail } from './Icons';
@@ -74,9 +75,31 @@ export default function VerifyEmailModal({ onClose, onVerified }) {
     }
   };
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(5px)',
+        padding: 16,
+      }}
+    >
+      <div
+        className="modal-card"
+        style={{ maxWidth: 440, width: '100%', margin: 'auto' }}
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <IconMail size={22} style={{ color: 'var(--discord-blurple)' }} />
@@ -201,6 +224,7 @@ export default function VerifyEmailModal({ onClose, onVerified }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
