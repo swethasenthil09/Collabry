@@ -26,10 +26,16 @@ const { initializeSocket } = require('./sockets/chat');
 const app = express();
 const server = http.createServer(app);
 
+// Dynamic CORS origin handler to support Vercel deployments, localhost, and custom domains
+const corsOriginHandler = (origin, callback) => {
+  // Allow all incoming origins dynamically so credentials and Vercel domains work seamlessly
+  callback(null, origin || true);
+};
+
 // Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: corsOriginHandler,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -44,7 +50,7 @@ app.use(helmet({
   frameguard: false, // Allow Live Demo Sandbox iframes to load without X-Frame-Options blocking
 }));
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: corsOriginHandler,
   credentials: true,
 }));
 const path = require('path');
