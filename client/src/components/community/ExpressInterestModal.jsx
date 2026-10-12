@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { IconUsers, IconSend } from '../common/Icons';
@@ -60,9 +61,31 @@ export default function ExpressInterestModal({ post, onClose, onSuccess }) {
     }
   };
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(5px)',
+        padding: 16,
+      }}
+    >
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{ maxWidth: 540, width: '100%', margin: 'auto' }}
+      >
         <div className="modal-header">
           <div className="modal-title">
             <IconUsers size={20} style={{ color: 'var(--discord-green)' }} />
@@ -166,6 +189,7 @@ export default function ExpressInterestModal({ post, onClose, onSuccess }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
