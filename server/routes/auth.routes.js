@@ -716,6 +716,7 @@ router.post('/google', async (req, res) => {
           name: userEmail.split('@')[0],
           picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userEmail)}`,
         };
+      } else {
         const allowedAudiences = [
           process.env.GOOGLE_CLIENT_ID?.trim(),
           process.env.GOOGLE_CALENDAR_CLIENT_ID?.trim(),
@@ -859,7 +860,7 @@ router.post('/google', async (req, res) => {
     });
   } catch (err) {
     console.error('Google Auth Error:', err);
-    res.status(500).json({ error: { code: 'SERVER_ERROR', message: 'Google authentication failed' } });
+    res.status(500).json({ error: { code: 'SERVER_ERROR', message: err?.message || 'Google authentication failed' } });
   }
 });
 
