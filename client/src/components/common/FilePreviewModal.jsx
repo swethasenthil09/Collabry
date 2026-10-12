@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FiX, FiDownload, FiCopy, FiCheck, FiExternalLink, FiFileText, FiImage, FiCode, FiFile } from 'react-icons/fi';
 import MarkdownView from './MarkdownView';
+import { resolveMediaUrl } from '../../services/api';
 
 export default function FilePreviewModal({ file, onClose }) {
   const [content, setContent] = useState('');
@@ -10,9 +12,7 @@ export default function FilePreviewModal({ file, onClose }) {
 
   if (!file) return null;
 
-  const fullUrl = file.url?.startsWith('http')
-    ? file.url
-    : `http://localhost:5000${file.url}`;
+  const fullUrl = resolveMediaUrl(file.url);
 
   const isImage = file.category === 'image' || file.name?.match(/\.(png|jpe?g|gif|webp|svg)$/i);
   const isPdf = file.name?.endsWith('.pdf') || file.url?.endsWith('.pdf');
@@ -50,11 +50,29 @@ export default function FilePreviewModal({ file, onClose }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1100 }}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(5px)',
+        padding: 16,
+      }}
+    >
       <div
         className="modal"
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
         style={{
           maxWidth: 860,
           width: '92vw',
@@ -219,6 +237,7 @@ export default function FilePreviewModal({ file, onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

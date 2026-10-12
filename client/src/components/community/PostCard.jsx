@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import api, { resolveMediaUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import PostDetailModal from './PostDetailModal';
 import ExpressInterestModal from './ExpressInterestModal';
@@ -220,14 +220,14 @@ export default function PostCard({ post, onVote, onPostUpdated }) {
             >
               {post.media_type === 'video' || post.media_url.match(/\.(mp4|webm|mov|ogg)$/i) ? (
                 <video
-                  src={post.media_url.startsWith('http') ? post.media_url : `http://localhost:5000${post.media_url}`}
+                  src={resolveMediaUrl(post.media_url)}
                   controls
                   playsInline
                   style={{ width: '100%', maxHeight: 420, objectFit: 'contain' }}
                 />
               ) : (
                 <img
-                  src={post.media_url.startsWith('http') ? post.media_url : `http://localhost:5000${post.media_url}`}
+                  src={resolveMediaUrl(post.media_url)}
                   alt={post.title}
                   style={{ width: '100%', maxHeight: 420, objectFit: 'contain' }}
                   loading="lazy"

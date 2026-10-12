@@ -8,6 +8,7 @@ import VerifyEmailModal from '../common/VerifyEmailModal';
 import CreateProjectModal from '../project/CreateProjectModal';
 import NewDmModal from '../chat/NewDmModal';
 import { IconPlus, IconChat, IconRadio, IconUsers, IconAlertTriangle, IconShield } from '../common/Icons';
+import { resolveMediaUrl } from '../../services/api';
 
 export default function Sidebar({ communities, projects, dms = [], groups = [], currentPath, unreadCount, onNavigate, onToggleNav, onDataChange, onOpenSearch, user }) {
   const { logout } = useAuth();
@@ -418,7 +419,7 @@ export default function Sidebar({ communities, projects, dms = [], groups = [], 
               <div className="user-avatar" style={{ position: 'relative', overflow: 'hidden' }}>
                 {user.avatar_url ? (
                   <img
-                    src={user.avatar_url.startsWith('http') ? user.avatar_url : `http://localhost:5000${user.avatar_url}`}
+                    src={resolveMediaUrl(user.avatar_url)}
                     alt={user.name || user.username}
                     style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                   />

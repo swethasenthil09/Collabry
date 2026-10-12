@@ -2,6 +2,20 @@ import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://collabry-server.onrender.com/api/v1';
 
+export const SERVER_BASE_URL = API_BASE.replace(/\/api\/v1\/?$/, '');
+
+export const resolveMediaUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:') || url.startsWith('data:')) {
+    if (url.includes('localhost:5000') && typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      return url.replace('http://localhost:5000', SERVER_BASE_URL);
+    }
+    return url;
+  }
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return `${SERVER_BASE_URL}${cleanPath}`;
+};
+
 const api = axios.create({
   baseURL: API_BASE,
   withCredentials: true,

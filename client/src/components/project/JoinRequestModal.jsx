@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../services/api';
 import { IconX, IconSparkles } from '../common/Icons';
 
@@ -26,9 +27,31 @@ export default function JoinRequestModal({ projectId, projectName, onClose, onSu
     }
   };
 
-  return (
-    <div className="modal-overlay" onClick={onClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480, width: '100%' }}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(5px)',
+        padding: 16,
+      }}
+    >
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{ maxWidth: 480, width: '100%', margin: 'auto' }}
+      >
         <div className="modal-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <IconSparkles size={20} style={{ color: 'var(--discord-blurple)' }} />
@@ -81,6 +104,7 @@ export default function JoinRequestModal({ projectId, projectName, onClose, onSu
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

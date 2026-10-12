@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../../services/api';
+import { createPortal } from 'react-dom';
+import api, { resolveMediaUrl } from '../../services/api';
 import { IconImage, IconX } from '../common/Icons';
 import MarkdownView from '../common/MarkdownView';
 
@@ -111,28 +112,38 @@ export default function CreatePostModal({ communityId, communityName, defaultPro
     }
   };
 
-  const mediaFullUrl = form.media_url
-    ? (form.media_url.startsWith('http') ? form.media_url : `http://localhost:5000${form.media_url}`)
-    : '';
+  const mediaFullUrl = resolveMediaUrl(form.media_url);
 
   const selectedCommunity = communities.find((c) => String(c.id) === String(form.community_id));
 
-  return (
+  return createPortal(
     <div
       className="modal-overlay"
       onClick={onClose}
       style={{
+        zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
         overflowY: 'auto',
         alignItems: 'center',
         justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(5px)',
         padding: '20px 16px',
+        display: 'flex',
       }}
     >
       <div
         className="modal"
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
         style={{
           maxWidth: 620,
+          width: '100%',
+          margin: 'auto',
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
@@ -544,6 +555,7 @@ export default function CreatePostModal({ communityId, communityName, defaultPro
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

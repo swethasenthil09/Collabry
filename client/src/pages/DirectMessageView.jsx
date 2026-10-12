@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -1151,9 +1152,31 @@ export default function DirectMessageView() {
       </div>
 
       {/* Group Members Modal */}
-      {showMembersModal && isGroup && (
-        <div className="modal-overlay" onClick={() => setShowMembersModal(false)}>
-          <div className="modal" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+      {showMembersModal && isGroup && createPortal(
+        <div
+          className="modal-overlay"
+          onClick={() => setShowMembersModal(false)}
+          style={{
+            zIndex: 99999,
+            position: 'fixed',
+            inset: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(5px)',
+            padding: 16,
+          }}
+        >
+          <div
+            className="modal"
+            style={{ maxWidth: 440, width: '92%' }}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <IconUsers size={18} style={{ color: 'var(--discord-green)' }} />
@@ -1287,7 +1310,8 @@ export default function DirectMessageView() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {reportingMsg && (

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../services/api';
 import { IconCalendar, IconClock, IconX, IconSparkles } from '../common/Icons';
 
@@ -95,8 +96,24 @@ export default function ScheduleMeetingModal({ projectId, members = [], onClose,
     }
   };
 
-  return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1200 }}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(5px)',
+        padding: 16,
+      }}
+    >
       <div
         className="modal"
         style={{
@@ -105,8 +122,12 @@ export default function ScheduleMeetingModal({ projectId, members = [], onClose,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
+          width: '100%',
+          margin: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="modal-header" style={{ flexShrink: 0 }}>
@@ -353,6 +374,7 @@ export default function ScheduleMeetingModal({ projectId, members = [], onClose,
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../../services/api';
+import api, { resolveMediaUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { getSocket } from '../../services/socket';
 import ConfirmModal from '../common/ConfirmModal';
@@ -594,9 +594,7 @@ export default function ProjectGitHub({ project }) {
     setPreviewMode('rendered');
     setLoadingPreview(true);
     try {
-      const url = wsFile.file_url.startsWith('http')
-        ? wsFile.file_url
-        : `http://localhost:5000${wsFile.file_url}`;
+      const url = resolveMediaUrl(wsFile.file_url);
       const res = await fetch(url);
       const html = await res.text();
       setPreviewData({

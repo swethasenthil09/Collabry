@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../../services/api';
+import api, { resolveMediaUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { getSocket } from '../../services/socket';
 import ConfirmModal from '../common/ConfirmModal';
@@ -473,9 +473,7 @@ p { color: #949ba4; font-size: 13px; line-height: 1.5; margin: 0 0 18px; }
       setLivePreviewContent(DEFAULT_SANDBOX_HTML);
       return;
     }
-    const url = file.file_url.startsWith('http')
-      ? file.file_url
-      : `http://localhost:5000${file.file_url}`;
+    const url = resolveMediaUrl(file.file_url);
     setLivePreviewUrl(url);
     try {
       const res = await fetch(url);
@@ -1131,7 +1129,7 @@ p { color: #949ba4; font-size: 13px; line-height: 1.5; margin: 0 0 18px; }
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <a
-                  href={previewFile.file_url.startsWith('http') ? previewFile.file_url : `http://localhost:5000${previewFile.file_url}`}
+                  href={resolveMediaUrl(previewFile.file_url)}
                   download={previewFile.name}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -1150,7 +1148,7 @@ p { color: #949ba4; font-size: 13px; line-height: 1.5; margin: 0 0 18px; }
             <div style={{ padding: '20px', overflowY: 'auto', flex: 1, maxHeight: '65vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {previewFile.category === 'image' ? (
                 <img
-                  src={previewFile.file_url.startsWith('http') ? previewFile.file_url : `http://localhost:5000${previewFile.file_url}`}
+                  src={resolveMediaUrl(previewFile.file_url)}
                   alt={previewFile.name}
                   style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain', borderRadius: 'var(--radius-sm)' }}
                 />
@@ -1438,9 +1436,7 @@ p { color: #949ba4; font-size: 13px; line-height: 1.5; margin: 0 0 18px; }
   // Helper to render individual file cards with clean boxed action buttons
   function renderFileCard(file, isNested = false) {
     const badge = getCategoryBadge(file.category);
-    const downloadUrl = file.file_url.startsWith('http')
-      ? file.file_url
-      : `http://localhost:5000${file.file_url}`;
+    const downloadUrl = resolveMediaUrl(file.file_url);
     const isExternalLink = file.category === 'link' || file.mime_type === 'link';
     const isPreviewable = canPreviewFile(file);
     const isHtmlFile = file.name.toLowerCase().endsWith('.html') || file.name.toLowerCase().endsWith('.htm');

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import api, { resolveMediaUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import ExpressInterestModal from './ExpressInterestModal';
 import ConfirmModal from '../common/ConfirmModal';
@@ -481,9 +482,31 @@ export default function PostDetailModal({ postId, onClose, onPostUpdated }) {
     ? (Array.isArray(post.required_skills) ? post.required_skills : JSON.parse(post.required_skills || '[]'))
     : [];
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(5px)',
+        padding: 16,
+      }}
+    >
+      <div
+        className="modal modal-lg"
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{ margin: 'auto' }}
+      >
         {/* Header */}
         <div className="modal-header">
           <div className="modal-title">
@@ -622,14 +645,14 @@ export default function PostDetailModal({ postId, onClose, onPostUpdated }) {
                     >
                       {post.media_type === 'video' || post.media_url.match(/\.(mp4|webm|mov|ogg)$/i) ? (
                         <video
-                          src={post.media_url.startsWith('http') ? post.media_url : `http://localhost:5000${post.media_url}`}
+                          src={resolveMediaUrl(post.media_url)}
                           controls
                           playsInline
                           style={{ width: '100%', maxHeight: 520, objectFit: 'contain' }}
                         />
                       ) : (
                         <img
-                          src={post.media_url.startsWith('http') ? post.media_url : `http://localhost:5000${post.media_url}`}
+                          src={resolveMediaUrl(post.media_url)}
                           alt={post.title}
                           style={{ width: '100%', maxHeight: 520, objectFit: 'contain' }}
                         />
@@ -939,6 +962,7 @@ export default function PostDetailModal({ postId, onClose, onPostUpdated }) {
           onCancel={() => setConfirmConfig(null)}
         />
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

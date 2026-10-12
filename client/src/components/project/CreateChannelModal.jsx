@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../services/api';
 import { IconHash, IconPlus } from '../common/Icons';
 
@@ -28,9 +29,31 @@ export default function CreateChannelModal({ projectId, onClose, onChannelCreate
     }
   };
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(5px)',
+        padding: 16,
+      }}
+    >
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{ maxWidth: '420px', width: '100%', margin: 'auto' }}
+      >
         <div className="modal-header">
           <div className="modal-title">
             <IconHash size={20} style={{ color: 'var(--discord-blurple)' }} />
@@ -78,6 +101,7 @@ export default function CreateChannelModal({ projectId, onClose, onChannelCreate
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

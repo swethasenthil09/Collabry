@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { IconPlay, IconPause } from '../common/Icons';
+import { resolveMediaUrl } from '../../services/api';
 
 // Pre-generated static bar patterns for waveform visualization
 const BAR_HEIGHTS = [
@@ -14,9 +15,7 @@ export default function VoiceNotePlayer({ mediaUrl, duration = 0, isSender = fal
   const [playbackRate, setPlaybackRate] = useState(1);
   const audioRef = useRef(null);
 
-  const fullAudioUrl = mediaUrl?.startsWith('http')
-    ? mediaUrl
-    : `http://localhost:5000${mediaUrl?.startsWith('/') ? '' : '/'}${mediaUrl}`;
+  const fullAudioUrl = resolveMediaUrl(mediaUrl);
 
   useEffect(() => {
     const audio = audioRef.current;

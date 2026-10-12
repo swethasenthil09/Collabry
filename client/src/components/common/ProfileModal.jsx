@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../../services/api';
+import { createPortal } from 'react-dom';
+import api, { resolveMediaUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import {
   FiCamera,
@@ -235,15 +236,34 @@ export default function ProfileModal({ onClose, onProfileUpdated }) {
     }
   };
 
-  const getFullImageUrl = (path) => {
-    if (!path) return '';
-    return path.startsWith('http') ? path : `http://localhost:5000${path}`;
-  };
+  const getFullImageUrl = (path) => resolveMediaUrl(path);
 
-  return (
+  return createPortal(
     <>
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal" style={{ maxWidth: 600, padding: 0, overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-overlay"
+        onClick={onClose}
+        style={{
+          zIndex: 99999,
+          position: 'fixed',
+          inset: 0,
+          width: '100vw',
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(5px)',
+          padding: 16,
+        }}
+      >
+        <div
+          className="modal"
+          style={{ maxWidth: 600, width: '92%', padding: 0, overflow: 'hidden' }}
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           
           {/* Custom User Banner Header */}
           <div style={{
@@ -892,6 +912,7 @@ export default function ProfileModal({ onClose, onProfileUpdated }) {
           }}
         />
       )}
-    </>
+    </>,
+    document.body
   );
 }

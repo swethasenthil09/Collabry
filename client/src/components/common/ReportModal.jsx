@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../services/api';
 import { IconClose, IconAlertTriangle, IconCheck } from './Icons';
 
@@ -59,12 +60,30 @@ export default function ReportModal({ isOpen, onClose, targetType = 'user', targ
     }
   };
 
-  return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(5px)',
+        padding: 16,
+      }}
+    >
       <div
         className="modal-card"
-        style={{ maxWidth: 480, width: '92%' }}
+        style={{ maxWidth: 480, width: '92%', margin: 'auto' }}
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../services/api';
 import { IconCheck, IconPlus, IconX, IconKanban } from '../common/Icons';
 import ConfirmModal from '../common/ConfirmModal';
@@ -193,9 +194,31 @@ export default function KanbanBoard({ projectId }) {
       </div>
 
       {/* Create task modal */}
-      {showCreate && (
-        <div className="modal-overlay" onClick={() => setShowCreate(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+      {showCreate && createPortal(
+        <div
+          className="modal-overlay"
+          onClick={() => setShowCreate(false)}
+          style={{
+            zIndex: 99999,
+            position: 'fixed',
+            inset: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(5px)',
+            padding: 16,
+          }}
+        >
+          <div
+            className="modal"
+            style={{ maxWidth: 520, width: '92%' }}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <div className="modal-title">
                 <span>Create Task</span>
@@ -277,7 +300,8 @@ export default function KanbanBoard({ projectId }) {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* In-app task delete confirmation modal */}

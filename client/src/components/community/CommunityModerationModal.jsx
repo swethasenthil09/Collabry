@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../services/api';
 import { FiShield, FiUser, FiTrash2, FiX, FiCheck, FiUsers } from 'react-icons/fi';
 import { IconPin } from '../common/Icons';
@@ -79,11 +80,29 @@ export default function CommunityModerationModal({ community, onClose, onUpdated
     }
   };
 
-  return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1100 }}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(5px)',
+        padding: 16,
+      }}
+    >
       <div
         className="modal"
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
         style={{
           maxWidth: 620,
           width: '92vw',
@@ -270,6 +289,7 @@ export default function CommunityModerationModal({ community, onClose, onUpdated
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

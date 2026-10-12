@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { IconTrash, IconX } from './Icons';
 
 export default function ConfirmModal({
@@ -24,12 +25,30 @@ export default function ConfirmModal({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="modal-overlay" onClick={!loading ? onCancel : undefined}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={!loading ? onCancel : undefined}
+      style={{
+        zIndex: 99999,
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(5px)',
+        padding: 16,
+      }}
+    >
       <div
         className="modal"
-        style={{ maxWidth: '440px', width: 'calc(100vw - 32px)' }}
+        style={{ maxWidth: '440px', width: 'calc(100vw - 32px)', margin: 'auto' }}
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
@@ -71,6 +90,7 @@ export default function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
