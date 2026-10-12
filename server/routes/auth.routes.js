@@ -871,8 +871,8 @@ router.post('/github', async (req, res) => {
     let githubUsername;
 
     if (code) {
-      const clientId = process.env.GITHUB_CLIENT_ID;
-      const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+      const clientId = process.env.GITHUB_CLIENT_ID || process.env.VITE_GITHUB_CLIENT_ID;
+      const clientSecret = process.env.GITHUB_CLIENT_SECRET || process.env.VITE_GITHUB_CLIENT_SECRET;
 
       if (!clientId || !clientSecret) {
         return res.status(500).json({
