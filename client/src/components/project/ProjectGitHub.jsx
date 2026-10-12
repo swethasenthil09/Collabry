@@ -1511,7 +1511,7 @@ export default function ProjectGitHub({ project }) {
               </div>
 
               {/* Two-column layout: Left files list, Right code preview */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 320px) 1fr', gap: 16, minHeight: '520px' }}>
+              <div className="github-preview-grid" style={{ gap: 16, minHeight: '520px' }}>
                 {/* File Tree Explorer (Left Column) */}
                 <div
                   style={{
